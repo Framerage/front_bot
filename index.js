@@ -14,6 +14,10 @@ const commands = [
     description: "Запуск бота",
   },
   {
+    command: "question",
+    description: "Задать вопрос",
+  },
+  {
     command: "ref",
     description: "Получить реферальную ссылку",
   },
@@ -39,10 +43,11 @@ const USEFULL_MENU = [
 ];
 const ROLE_MENU = [
   [
-    {text: "Frontend-React", callback_data: "sticker"},
-    {text: "Frontend-Vue", callback_data: "circleVideo"},
+    {text: "Frontend-React", callback_data: "reactRole"},
+    {text: "Frontend-Vue", callback_data: "vueRole"},
   ],
-  [{text: "Fullstack", callback_data: "checkSubs"}],
+  [{text: "Fullstack", callback_data: "fullRole"}],
+  // [{text: "Проплатить роль", callback_data: "buyRole"}],
   [{text: "Закрыть Меню", callback_data: "closeMenu"}],
 ];
 shopBot.on("message", async msg => {
@@ -54,7 +59,12 @@ shopBot.on("message", async msg => {
       },
     });
   }
-
+  if (msg.text === "/question") {
+    await shopBot.sendMessage(
+      msg.chat.id,
+      `Что тебя интересует, ${userRole}-властелин?`,
+    );
+  }
   if (msg.text === "/usefull_menu") {
     await shopBot.sendMessage(msg.chat.id, `Меню полезностей`, {
       reply_markup: {
@@ -170,8 +180,56 @@ shopBot.on("location", async location => {
   }
 });
 shopBot.on("callback_query", async ctx => {
+  console.log(ctx, "ctx callback");
   try {
     switch (ctx.data) {
+      case "reactRole":
+        userRole = "react";
+        await shopBot.deleteMessage(
+          ctx.message.chat.id,
+          ctx.message.message_id,
+        );
+        await shopBot.sendMessage(ctx.message.chat.id, "Ясно кто тут Папа");
+        break;
+
+      case "vueRole":
+        userRole = "vue";
+        await shopBot.deleteMessage(
+          ctx.message.chat.id,
+          ctx.message.message_id,
+        );
+        await shopBot.sendMessage(ctx.message.chat.id, "А ты хорош");
+        break;
+
+      case "fullRole":
+        userRole = "full";
+        await shopBot.deleteMessage(
+          ctx.message.chat.id,
+          ctx.message.message_id,
+        );
+        await shopBot.sendMessage(
+          ctx.message.chat.id,
+          "Надеюсь ты не PhPшник...",
+        );
+        break;
+      //temp comment before create payments
+      // case "buyRole":
+      //   await shopBot.sendInvoice(
+      //     ctx.message.chat.id,
+      //     "Купить роль",
+      //     "Покупка роли",
+      //     "file",
+      //     process.env.PROVIDER_TOKEN,
+      //     "RUB",
+      //     [
+      //       {
+      //         label: "Файл",
+      //         amount: 100,
+      //       },
+      //     ],
+      //   );
+
+      //   break;
       case "closeMenu":
         await shopBot.deleteMessage(
           ctx.message.chat.id,
