@@ -1,323 +1,76 @@
-import TelegramBot from "node-telegram-bot-api";
+import {Scenes, session, Telegraf} from "telegraf";
+import {message} from "telegraf/filters";
 // bot description https://core.telegram.org/bots/api
+const tkn = process.env.USER_FATHER_TKN || "";
+const discountBot = new Telegraf(tkn);
 
-const shopBot = new TelegramBot(process.env.USER_FATHER_TKN, {
-  polling: {
-    interval: 300,
-    autoStart: true,
-  },
-});
+discountBot.use(session());
 
+// interface IBotCommand {
+//   commandName: String;
+//   description: String;
+//   commandCb: (ctx: any) => void;
+// }
+//comands
 const commands = [
   {
-    command: "start",
+    commandName: "start",
     description: "Запуск бота",
+    commandCb: () => {},
   },
   {
-    command: "question",
-    description: "Задать вопрос",
+    commandName: "find_discount",
+    description: "Найти товар со скидкой",
+    commandCb: () => {},
   },
   {
-    command: "ref",
+    commandName: "ref",
     description: "Получить реферальную ссылку",
+    commandCb: () => {},
   },
+  // {
+  //   commandName: "usefull_menu",
+  //   description: "Меню полезностей",
+  // },
   {
-    command: "usefull_menu",
-    description: "Меню полезностей",
-  },
-  {
-    command: "role_menu",
-    description: "Ролевое меню",
+    commandName: "shop_menu",
+    description: "Меню магазинов",
+    commandCb: () => {},
   },
 ];
-
-shopBot.setMyCommands(commands);
-let userRole = "";
-let locationLatitude = null;
-let locationLongitude = null;
-const COORD_REGEXP = /(\d+\.\d+)/;
-const USEFULL_MENU = [
-  ["Локация по координатам"],
-  [{text: "Координаты геолокации", request_location: true}],
-  ["❌ Закрыть меню"],
-];
-const ROLE_MENU = [
-  [
-    {text: "Frontend-React", callback_data: "reactRole"},
-    {text: "Frontend-Vue", callback_data: "vueRole"},
-  ],
-  [{text: "Fullstack", callback_data: "fullRole"}],
-  // [{text: "Проплатить роль", callback_data: "buyRole"}],
-  [{text: "Закрыть Меню", callback_data: "closeMenu"}],
-];
-shopBot.on("message", async msg => {
-  if (msg.text?.startsWith("/start")) {
-    await shopBot.sendMessage(msg.chat.id, "Ну привет, " + msg.from.username);
-    await shopBot.sendMessage(msg.chat.id, `Кто такой будешь?`, {
-      reply_markup: {
-        inline_keyboard: ROLE_MENU,
-      },
-    });
-  }
-  if (msg.text === "/question") {
-    await shopBot.sendMessage(
-      msg.chat.id,
-      `Что тебя интересует, ${userRole}-властелин?`,
-    );
-  }
-  if (msg.text === "/usefull_menu") {
-    await shopBot.sendMessage(msg.chat.id, `Меню полезностей`, {
-      reply_markup: {
-        keyboard: USEFULL_MENU,
-      },
-      resize_keyboard: true,
-    });
-  }
-  if (msg.text === "Локация по координатам") {
-    if (!locationLatitude) {
-      await shopBot.sendMessage(msg.chat.id, "Введите широту (Широта:55.8835)");
-      return;
-    }
-    if (!locationLongitude) {
-      await shopBot.sendMessage(
-        msg.chat.id,
-        "Введите долготу (Долгота:44.22234)",
-      );
-      return;
-    }
-    await shopBot.sendLocation(
-      msg.chat.id,
-      locationLatitude,
-      locationLongitude,
-      {
-        reply_to_message_id: `Широта: ${locationLatitude}\nДолгота: ${locationLongitude}`,
-      },
-    );
-    locationLatitude = null;
-    locationLongitude = null;
-  }
-  //TODO: кнопка/команда сброса локации
-  if (msg.text.startsWith("Широта:")) {
-    locationLatitude = msg.text.slice(7).trim();
-    if (!COORD_REGEXP.test(locationLatitude)) {
-      await shopBot.sendMessage(
-        msg.chat.id,
-        "Неверный формат. Введите широту (Широта:55.8835)",
-      );
-      return;
-    }
-    if (!locationLongitude) {
-      await shopBot.sendMessage(
-        msg.chat.id,
-        "Введите долготу (Долгота:44.23452)",
-      );
-      return;
-    }
-    await shopBot.sendLocation(
-      msg.chat.id,
-      locationLatitude,
-      locationLongitude,
-      {
-        protect_content: true,
-      },
-    );
-    locationLatitude = null;
-    locationLongitude = null;
-  }
-  if (msg.text.startsWith("Долгота:")) {
-    locationLongitude = msg.text.slice(8).trim();
-    if (!COORD_REGEXP.test(locationLongitude)) {
-      await shopBot.sendMessage(
-        msg.chat.id,
-        "Неверный формат. Введите долготу (Долгота:55.8835)",
-      );
-      return;
-    }
-    if (!locationLatitude) {
-      await shopBot.sendMessage(
-        msg.chat.id,
-        "Введите широту (Широта:33.656335)",
-      );
-      return;
-    }
-    await shopBot.sendLocation(
-      msg.chat.id,
-      locationLatitude,
-      locationLongitude,
-      {
-        protect_content: true,
-      },
-    );
-    locationLatitude = null;
-    locationLongitude = null;
-  }
-  console.log(locationLatitude, "locationLatitude");
-  console.log(locationLongitude, "locationLongitude");
-  if (msg.text === "❌ Закрыть меню") {
-    await shopBot.sendMessage(msg.chat.id, "Close menu", {
-      reply_markup: {
-        remove_keyboard: true,
-      },
-    });
-  }
-  if (msg.text === "/role_menu") {
-    await shopBot.sendMessage(msg.chat.id, `Кто такой будешь?`, {
-      reply_markup: {
-        inline_keyboard: ROLE_MENU,
-      },
-    });
-  }
-});
-
-shopBot.on("location", async location => {
-  try {
-    await shopBot.sendMessage(
-      location.chat.id,
-      `Широта: ${location.location.latitude}\nДолгота: ${location.location.longitude}`,
-    );
-  } catch (error) {
-    console.log(error);
-  }
-});
-shopBot.on("callback_query", async ctx => {
-  console.log(ctx, "ctx callback");
-  try {
-    switch (ctx.data) {
-      case "reactRole":
-        userRole = "react";
-        await shopBot.deleteMessage(
-          ctx.message.chat.id,
-          ctx.message.message_id,
-        );
-        await shopBot.sendMessage(ctx.message.chat.id, "Ясно кто тут Папа");
-        break;
-
-      case "vueRole":
-        userRole = "vue";
-        await shopBot.deleteMessage(
-          ctx.message.chat.id,
-          ctx.message.message_id,
-        );
-        await shopBot.sendMessage(ctx.message.chat.id, "А ты хорош");
-        break;
-
-      case "fullRole":
-        userRole = "full";
-        await shopBot.deleteMessage(
-          ctx.message.chat.id,
-          ctx.message.message_id,
-        );
-        await shopBot.sendMessage(
-          ctx.message.chat.id,
-          "Надеюсь ты не PhPшник...",
-        );
-        break;
-      //temp comment before create payments
-      // case "buyRole":
-      //   await shopBot.sendInvoice(
-      //     ctx.message.chat.id,
-      //     "Купить роль",
-      //     "Покупка роли",
-      //     "file",
-      //     process.env.PROVIDER_TOKEN,
-      //     "RUB",
-      //     [
-      //       {
-      //         label: "Файл",
-      //         amount: 100,
-      //       },
-      //     ],
-      //   );
-
-      //   break;
-      case "closeMenu":
-        await shopBot.deleteMessage(
-          ctx.message.chat.id,
-          ctx.message.message_id,
-        );
-        break;
-    }
-  } catch (error) {
-    console.log(error);
-  }
-});
-// shopBot.on('text', async msg => {
-//     if(msg.text.startsWith('/start')){
-//         await shopBot.sendMessage(msg.chat.id, `Дарова`)
-//         if(msg.text.length > 6) {
-
-//             const refID = msg.text.slice(7);
-
-//             await shopBot.sendMessage(msg.chat.id, `Вы зашли по ссылке пользователя с ID ${refID}`);
-
-//         }
-//         // return
-//     }
-//     if(msg.text == '/ref') {
-//         await shopBot.sendMessage(msg.chat.id, `${botUrl}?start=${msg.from.id}`);
-//         // return
-//     }
-//     if(msg.text == '/help') {
-//         await shopBot.sendMessage(msg.chat.id, `Раздел помощи HTML\n\n<b>Жирный Текст</b>\n<i>Текст Курсивом</i>\n<code>Текст с Копированием</code>\n<s>Перечеркнутый текст</s>\n<u>Подчеркнутый текст</u>\n<pre language='c++'>код на c++</pre>\n<a href='t.me'>Гиперссылка</a>`, {
-
-//             parse_mode: "HTML"
-
-//         });
-//         // return
-//     }
-// })
-// if(msg.text == '/menu') {
-
-//     await shopBot.sendMessage(msg.chat.id, `Меню бота`, {
-
-//         reply_markup: {
-
-//             keyboard: [
-
-//                 ['⭐️ Картинка', '⭐️ Видео'],
-//                 ['⭐️ Аудио', '⭐️ Голосовое сообщение'],
-//                 ['❌ Закрыть меню']
-
-//             ]
-
-//         },
-//         resize_keyboard: true
-
-//     })
-// // return
-// }
-//     if(msg.text ==='❌ Закрыть меню'){
-
-//         await shopBot.sendMessage(msg.chat.id,'',{
-
-//             reply_markup: {
-
-//             remove_keyboard: true
-//         }
-//     })
-// }
-
-// await shopBot.sendMessage(msg.chat.id, msg.text);
-
-//delete msg and send new
-// setTimeout(async () => {
-
-//     await shopBot.deleteMessage(msgWait.chat.id, msgWait.message_id);
-//     await shopBot.sendMessage(msg.chat.id, msg.text);
-
-// }, 5000);
-
-//edit msg
-// setTimeout(async () => {
-
-//     await bot.editMessageText(msg.text, {
-
-//         chat_id: msgWait.chat.id,
-//         message_id: msgWait.message_id
-
-//     });
-
-// }, 5000);
+// commands.forEach(c => {
+//   discountBot.command(c.commandName, c.commandCb);
+// });
+// discountBot.command('start',(ctx)=>{
 
 // })
-// shopBot.on("polling_error", err => console.log(err.data.error.message));
+
+// discountBot.on(message("text"), async (ctx) => {...}); //обработка сообщения
+//bot.on(callbackQuery(), async (ctx) => {...}); //обработка нажатия на кнопку
+// const { Telegraf } = require('telegraf')
+// const { message } = require('telegraf/filters')
+
+discountBot.start(ctx => ctx.reply("Welcome"));
+discountBot.help(ctx => ctx.reply("Send me a sticker"));
+discountBot.on(message("sticker"), ctx => ctx.reply("👍")); // обработка в
+discountBot.hears(["hi", "ho", "hahaha", "go"], ctx => ctx.reply("Hey there")); //обработка ввода определенных значений
+discountBot.on(message("text"), async ctx => {
+  // Explicit usage
+  await ctx.telegram.sendMessage(
+    ctx.message.chat.id,
+    `Hello ${ctx.state.role}`,
+  );
+  // Using context shortcut
+  // await ctx.reply(`Hello ${ctx.state}`);
+});
+discountBot.launch(); //запуск бота
+
+// Enable graceful stop
+process.once("SIGINT", () => discountBot.stop("SIGINT"));
+process.once("SIGTERM", () => discountBot.stop("SIGTERM"));
+
+const mainScene = new Scenes.BaseScene("MainScene");
+
+mainScene.enter(async ctx => {
+  console.log(ctx, "bot context");
+});

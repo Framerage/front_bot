@@ -1,6 +1,6 @@
 {
   "name": "front_bot",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "",
   "main": "index.js",
   "type": "module",
@@ -9,14 +9,18 @@
     "npm": "~10.0.0"
   },
   "scripts": {
-    "start": "nodemon --env-file=.env index.js",
+    "start": "nodemon --env-file=.env ./index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Artem I",
   "license": "ISC",
   "dependencies": {
-    "@types/node-telegram-bot-api": "^0.64.7",
-    "node-telegram-bot-api": "^0.66.0",
-    "nodemon": "^3.1.7"
+    "nodemon": "^3.1.9",
+    "telegraf": "^4.16.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.9",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.2"
   }
 }
