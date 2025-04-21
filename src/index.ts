@@ -1,18 +1,12 @@
-import {nextTick} from "process";
-import {Context, Markup, Telegraf} from "telegraf";
+import {Markup, Telegraf} from "telegraf";
 import {message} from "telegraf/filters";
 
 const tkn = process.env.USER_FATHER_TKN || "";
-const helpDescription = process.env.BOT_HELP || "";
-const x5Api = process.env.X5_SEARCH_API || "";
+const helpDescription = process.env.BOT_HELP || "test";
 
-// const fetchProd = await fetch("?mode=delivery&q=чипсыtwisterlimit=100")
-//   .then(res => res.json())
-//   .then(res => console.log(res, "result"));
 const luckyBot = new Telegraf(tkn);
 
 // discountBot.start(ctx => ctx.reply("Very welcome"));
-// discountBot.help(ctx => ctx.reply(helpDescription));
 // discountBot.on(message("animation"), ctx => ctx.reply("👍"));
 // discountBot.on(message("sticker"), ctx => ctx.reply("👍"));
 // discountBot.on(message("contact"), ctx => ctx.reply("👍"));
@@ -43,33 +37,85 @@ const luckyBot = new Telegraf(tkn);
 //   //     throw new Error(`Error with search discount - ${error}`);
 //   //   }
 // });
+
+// const randonNumScene = new WizardScene(
+//   "randomNum",
+//   ctx => {
+//     let keyboard_buttons = Markup.keyboard(["Я водитель"]).oneTime().resize();
+//     ctx.reply("Кто вы?", keyboard_buttons);
+//     return ctx.wizard.next();
+//   },
+//   ctx => {
+//     ctx.reply(`Я грут`);
+//     return ctx.wizard.next();
+//   },
+// );
+// const stages= new Stage([randonNumScene])
 const gamesKeyboard = [
   [
-    {text: "Random number", callback_data: "randomNumGame"},
-    {text: "Dices", callback_data: "diceGame"},
+    {
+      text: "Number",
+      callback_data: "randomNumber",
+    },
+    {text: "Dice", callback_data: "diceGame"},
   ],
-  [{text: "Game", callback_data: "anyGame"}],
-  [{text: "Close", callback_data: "closeGameKb"}],
+  [
+    {
+      text: "Close",
+      callback_data: "closeKeyboard",
+    },
+  ],
 ];
+let currentRandomNumber: number | null = null;
 luckyBot.start(ctx => {
-  ctx.reply("Welcome, luckers", Markup.inlineKeyboard(gamesKeyboard));
+  ctx.reply("Well, let`s play", Markup.inlineKeyboard(gamesKeyboard));
 });
+luckyBot.help(ctx => ctx.reply(helpDescription));
 
 luckyBot.command("games", ctx => {
-  ctx.replyWithHTML("Choose game", Markup.keyboard(gamesKeyboard));
+  ctx.reply("Games", Markup.inlineKeyboard(gamesKeyboard));
 });
-luckyBot.action("diceGame", async (ctx, nextTick) => {
+luckyBot.command("show_number", ctx => {
+  ctx.reply(
+    currentRandomNumber
+      ? `Загаданное число ${currentRandomNumber}`
+      : "Не покажу",
+  );
+});
+
+luckyBot.action("randomNumber", ctx => {
+  currentRandomNumber = Math.floor(Math.random() * 10);
+  ctx.reply(`Случайно число загадано`);
+  ctx.editMessageReplyMarkup({inline_keyboard: []});
+});
+
+luckyBot.action("diceGame", ctx => {
   ctx.replyWithDice();
-  nextTick();
+  ctx.editMessageReplyMarkup({inline_keyboard: []});
 });
-luckyBot.action("closeGameKb", async (ctx, nextTick) => {
-  ctx.reply("Think about it", Markup.removeKeyboard());
-  nextTick();
+
+luckyBot.action("closeKeyboard", ctx => {
+  ctx.editMessageReplyMarkup({inline_keyboard: []});
 });
-luckyBot.action("anyGame", (ctx, nextTick) => {
-  ctx.replyWithGame("Test");
-  nextTick();
+
+luckyBot.hears(["Покажи число", "покажи число"], ctx => {
+  ctx.reply(
+    currentRandomNumber
+      ? `Загаданное число ${currentRandomNumber}`
+      : "Не покажу",
+  );
 });
+
+luckyBot.on(message("text"), ctx => {
+  if (ctx.update.message.text == String(currentRandomNumber)) {
+    console.log("test", currentRandomNumber);
+    ctx.reply(
+      `@${ctx.update.message.from.username} угадал(а). Число ${currentRandomNumber}`,
+    );
+    currentRandomNumber = null;
+  }
+});
+
 luckyBot.launch();
 process.once("SIGINT", () => luckyBot.stop("SIGINT"));
 process.once("SIGTERM", () => luckyBot.stop("SIGTERM"));
