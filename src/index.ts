@@ -95,7 +95,7 @@ luckyBot.action("rockPaperGame", ctx => {
 });
 luckyBot.action("randomNumber", ctx => {
   currentRandomNumber = Math.floor(Math.random() * 10);
-  ctx.reply(`Случайно число загадано`);
+  ctx.reply(`Случайно число загадано от 1 до 10`);
   ctx.editMessageReplyMarkup({inline_keyboard: []});
 });
 
